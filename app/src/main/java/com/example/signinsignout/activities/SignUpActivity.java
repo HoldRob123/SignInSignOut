@@ -141,10 +141,10 @@ public class SignUpActivity extends AppCompatActivity {
      * @return True if the input is valid, false otherwise.
      */
     private Boolean isValidateSignUpDetails() {
-        if (encodeImage == null) {
-            showToast("Please select your image");
-            return false;
-        }
+//        if (encodeImage == null) {
+//            showToast("Please select your image");
+//            return false;
+//        }
         if (binding.inputName.getText().toString().trim().isEmpty()) {
             showToast("Please Enter your Name");
             return false;
