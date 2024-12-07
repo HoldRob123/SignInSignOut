@@ -14,7 +14,6 @@ import com.example.signinsignout.models.ChatMessage;
 import com.example.signinsignout.models.User;
 import com.example.signinsignout.utilities.Constants;
 import com.example.signinsignout.utilities.PreferenceManager;
-import com.google.android.gms.common.internal.Objects;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -28,6 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Activity for handling chat functionality.
+ */
 public class ChatActivity extends AppCompatActivity {
 
     private ActivityChatBinding binding;
@@ -37,7 +39,6 @@ public class ChatActivity extends AppCompatActivity {
     private PreferenceManager preferenceManager;
     private FirebaseFirestore database;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,11 +47,13 @@ public class ChatActivity extends AppCompatActivity {
         loadReceivererDetail();
         setListener();
         init();
-        ListenMessage();
-
+        listenMessage();
     }
 
-    private void init(){
+    /**
+     * Initializes preference manager, chat messages, adapter, and database.
+     */
+    private void init() {
         preferenceManager = new PreferenceManager(getApplicationContext());
         chatMessages = new ArrayList<>();
         chatAdapter = new ChatAdapter(
@@ -62,85 +65,98 @@ public class ChatActivity extends AppCompatActivity {
         database = FirebaseFirestore.getInstance();
     }
 
-    private void sendMessages(){
+    /**
+     * Sends a message to the chat.
+     */
+    private void sendMessages() {
         HashMap<String, Object> message = new HashMap<>();
-
         message.put(Constants.KEY_SENDER_ID, preferenceManager.getString(Constants.KEY_USER_ID));
         message.put(Constants.KEY_RECEIVER_ID, receiverUser.id);
-
         message.put(Constants.KEY_MESSAGE, binding.inputMessage.getText().toString());
         message.put(Constants.KEY_TIMESTAMP, new Date());
 
         database.collection(Constants.KEY_COLLECTION_CHAT).add(message);
         binding.inputMessage.setText(null);
-
-
     }
 
-    private void ListenMessage(){
+    /**
+     * Listens for incoming messages.
+     */
+    private void listenMessage() {
         database.collection(Constants.KEY_COLLECTION_CHAT)
-                .whereEqualTo(Constants.KEY_SENDER_ID,
-                preferenceManager.getString(Constants.KEY_USER_ID))
-                .whereEqualTo(Constants.KEY_RECEIVER_ID,receiverUser.id)
+                .whereEqualTo(Constants.KEY_SENDER_ID, preferenceManager.getString(Constants.KEY_USER_ID))
+                .whereEqualTo(Constants.KEY_RECEIVER_ID, receiverUser.id)
                 .addSnapshotListener(eventListener);
 
         database.collection(Constants.KEY_COLLECTION_CHAT)
-                .whereEqualTo(Constants.KEY_SENDER_ID,
-                        receiverUser.id)
-                .whereEqualTo(Constants.KEY_RECEIVER_ID,
-                        preferenceManager.getString(Constants.KEY_USER_ID))
+                .whereEqualTo(Constants.KEY_SENDER_ID, receiverUser.id)
+                .whereEqualTo(Constants.KEY_RECEIVER_ID, preferenceManager.getString(Constants.KEY_USER_ID))
                 .addSnapshotListener(eventListener);
     }
 
-    private final EventListener<QuerySnapshot> eventListener = (((value, error) -> {
-        if(error != null){
+    private final EventListener<QuerySnapshot> eventListener = (value, error) -> {
+        if (error != null) {
             return;
         }
-        if(value != null){
+        if (value != null) {
             int count = chatMessages.size();
-            for (DocumentChange documentChange:value.getDocumentChanges()){
-                if (documentChange.getType() == DocumentChange.Type.ADDED){
+            for (DocumentChange documentChange : value.getDocumentChanges()) {
+                if (documentChange.getType() == DocumentChange.Type.ADDED) {
                     ChatMessage chatMessage = new ChatMessage();
                     chatMessage.senderId = documentChange.getDocument().getString(Constants.KEY_SENDER_ID);
                     chatMessage.receiverId = documentChange.getDocument().getString(Constants.KEY_RECEIVER_ID);
                     chatMessage.message = documentChange.getDocument().getString(Constants.KEY_MESSAGE);
-                    chatMessage.dateTime = getReadableDateTime(
-                            documentChange.getDocument().getDate(Constants.KEY_TIMESTAMP));
-
+                    chatMessage.dateTime = getReadableDateTime(documentChange.getDocument().getDate(Constants.KEY_TIMESTAMP));
                     chatMessage.dateObject = documentChange.getDocument().getDate(Constants.KEY_TIMESTAMP);
                     chatMessages.add(chatMessage);
                 }
             }
-            Collections.sort(chatMessages,(obj1, obj2) -> obj1.dateObject.compareTo(obj2.dateObject));
-            if (count == 0){
+            Collections.sort(chatMessages, (obj1, obj2) -> obj1.dateObject.compareTo(obj2.dateObject));
+            if (count == 0) {
                 chatAdapter.notifyDataSetChanged();
             } else {
-                chatAdapter.notifyItemRangeChanged(chatMessages.size(),chatMessages.size());
-
-                binding.chatRecyclerView.smoothScrollToPosition(chatMessages.size()-1);
+                chatAdapter.notifyItemRangeChanged(chatMessages.size(), chatMessages.size());
+                binding.chatRecyclerView.smoothScrollToPosition(chatMessages.size() - 1);
             }
             binding.chatRecyclerView.setVisibility(View.VISIBLE);
         }
         binding.progressBar.setVisibility(View.GONE);
-    }));
-    private Bitmap getBitmapFromEncodedString(String encodedImage){
-        byte [] bytes = Base64.decode(encodedImage,Base64.DEFAULT);
+    };
+
+    /**
+     * Converts a Base64 encoded string to a Bitmap.
+     *
+     * @param encodedImage the encoded image string
+     * @return the Bitmap representation of the image
+     */
+    private Bitmap getBitmapFromEncodedString(String encodedImage) {
+        byte[] bytes = Base64.decode(encodedImage, Base64.DEFAULT);
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
     }
 
-    private void loadReceivererDetail(){
+    /**
+     * Loads receiver user details from the intent.
+     */
+    private void loadReceivererDetail() {
         receiverUser = (User) getIntent().getSerializableExtra(Constants.KEY_USER);
         binding.textName.setText(receiverUser.name);
     }
 
-    private void setListener(){
-
+    /**
+     * Sets up listeners for UI elements.
+     */
+    private void setListener() {
         binding.imageBack.setOnClickListener(v -> onBackPressed());
-
         binding.layoutSend.setOnClickListener(v -> sendMessages());
     }
 
-    private String getReadableDateTime(Date date){
+    /**
+     * Formats a Date object to a readable date-time string.
+     *
+     * @param date the Date object
+     * @return the formatted date-time string
+     */
+    private String getReadableDateTime(Date date) {
         return new SimpleDateFormat("MMM dd, yyyy - hh:mm a", Locale.getDefault()).format(date);
     }
 }

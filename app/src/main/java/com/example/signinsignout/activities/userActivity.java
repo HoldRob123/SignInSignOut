@@ -17,7 +17,9 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * Activity to display the list of users.
+ */
 public class userActivity extends AppCompatActivity implements UserListener {
 
     private ActivityUserBinding binding;
@@ -34,10 +36,16 @@ public class userActivity extends AppCompatActivity implements UserListener {
 
     }
 
+    /**
+     * Sets up click listeners for the UI elements.
+     */
     private void setListeners(){
         binding.imageBack.setOnClickListener(v -> onBackPressed());
     }
 
+    /**
+     * Fetches the list of users from Firestore.
+     */
     private void getUsers(){
         loading(true);
         FirebaseFirestore database = FirebaseFirestore.getInstance();
@@ -72,11 +80,19 @@ public class userActivity extends AppCompatActivity implements UserListener {
                 });
     }
 
+    /**
+     * Displays an error message when there are no users to show.
+     */
     private void showErrorMessage(){
         binding.textErrorMessage.setText(String.format("%s","No user available"));
         binding.textErrorMessage.setVisibility(View.VISIBLE);
     }
 
+    /**
+     * Shows or hides the loading indicator.
+     *
+     * @param isLoading whether to show the loading indicator
+     */
     private void loading(Boolean isLoading){
         if(isLoading){
             binding.progressBar.setVisibility(View.VISIBLE);
